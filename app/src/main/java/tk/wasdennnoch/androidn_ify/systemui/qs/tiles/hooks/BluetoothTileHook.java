@@ -8,6 +8,7 @@ import com.android.internal.logging.MetricsLogger;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;
 import tk.wasdennnoch.androidn_ify.systemui.notifications.NotificationPanelHooks;
+import tk.wasdennnoch.androidn_ify.systemui.notifications.StatusBarHeaderHooks;
 import tk.wasdennnoch.androidn_ify.utils.ConfigUtils;
 
 public class BluetoothTileHook extends QSTileHook {
@@ -30,7 +31,7 @@ public class BluetoothTileHook extends QSTileHook {
     public void handleClick() {
         Object mState = getObjectField("mState");
         boolean enabled = XposedHelpers.getBooleanField(mState, "value");
-        if (NotificationPanelHooks.isExpanded()) {
+        if (NotificationPanelHooks.isExpanded() && !StatusBarHeaderHooks.mUseDragPanel) {
             if (!enabled) {
                 XposedHelpers.setBooleanField(mState, "value", true);
                 XposedHelpers.callMethod(mController, "setBluetoothEnabled", true);

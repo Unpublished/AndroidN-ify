@@ -5,15 +5,19 @@ import android.view.ViewGroup;
 
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;
+import tk.wasdennnoch.androidn_ify.XposedHook;
 
 class CMQuickSettingsHooks extends QuickSettingsHooks {
+
+    private String TAG = CMQuickSettingsHooks.class.getSimpleName();
+
     CMQuickSettingsHooks(ClassLoader classLoader) {
         super(classLoader);
     }
 
     @Override
     protected void hookConstructor() {
-        XposedHelpers.findAndHookMethod(mHookClass, "setupViews", new XC_MethodHook() {
+        XposedHelpers.findAndHookMethod(mHookQSImpl, "setupViews", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 mQsPanel = (ViewGroup) param.thisObject;
@@ -27,7 +31,8 @@ class CMQuickSettingsHooks extends QuickSettingsHooks {
     }
 
     @Override
-    protected String getHookClass() {
+    protected String getHookQSImplClass() {
+        XposedHook.logD(TAG, "getHookQSImplClass");
         return CLASS_QS_DRAG_PANEL;
     }
 }

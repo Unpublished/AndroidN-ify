@@ -555,7 +555,7 @@ public class StatusBarHeaderHooks {
                 mDateExpanded.setVisibility(View.GONE);
                 mDateGroup.setVisibility(View.GONE);
                 updateAlarmVisibilities();
-                mMultiUserSwitch.setVisibility(mExpanded ? View.VISIBLE : View.INVISIBLE);
+                mMultiUserSwitch.setVisibility(View.INVISIBLE);
                 mEdit.setVisibility(ConfigUtils.qs().enable_qs_editor ? mExpanded ? View.VISIBLE : View.INVISIBLE : View.GONE);
                 if (!mShowFullAlarm) {
                     mAlarmStatus.setVisibility(View.GONE);
@@ -588,7 +588,7 @@ public class StatusBarHeaderHooks {
             boolean shouldShowViews = !editing && XposedHelpers.getBooleanField(param.thisObject, "mExpanded");
             if (mDateTimeAlarmGroup != null) {
                 mDateTimeAlarmGroup.setVisibility(editing ? View.INVISIBLE : View.VISIBLE);
-                mMultiUserSwitch.setVisibility(shouldShowViews ? View.VISIBLE : View.INVISIBLE);
+                mMultiUserSwitch.setVisibility(View.INVISIBLE);
                 mSettingsContainer.setVisibility(shouldShowViews ? View.VISIBLE : View.INVISIBLE);
                 mExpandIndicator.setVisibility(editing ? View.INVISIBLE : View.VISIBLE);
             }

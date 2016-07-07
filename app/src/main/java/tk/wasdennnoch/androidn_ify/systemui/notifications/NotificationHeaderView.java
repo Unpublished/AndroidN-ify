@@ -45,6 +45,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 import tk.wasdennnoch.androidn_ify.R;
+import tk.wasdennnoch.androidn_ify.XposedHook;
 import tk.wasdennnoch.androidn_ify.utils.ResourceUtils;
 
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -56,6 +57,9 @@ import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 @RemoteViews.RemoteView
 public class NotificationHeaderView extends ViewGroup {
     public static final int NO_COLOR = -1;
+
+    private static final String TAG = NotificationHeaderView.class.getSimpleName();
+
     private final int mChildMinWidth;
     private final int mContentEndMargin;
     private View mAppName;
@@ -313,10 +317,19 @@ public class NotificationHeaderView extends ViewGroup {
             child.measure(childWidthSpec, childHeightSpec);
             totalWidth += lp.leftMargin + lp.rightMargin + child.getMeasuredWidth();
         }
-        if (totalWidth > givenWidth) {
+        if (totalWidth > givenWidth && mAppName != null) {
             int overFlow = totalWidth - givenWidth;
             // We are overflowing, lets shrink the app name first
-            final int appWidth = mAppName.getMeasuredWidth();
+
+            final int appWidth;
+            appWidth = mAppName.getMeasuredWidth();
+
+            /*try {
+            } catch (Throwable t) {
+                XposedHook.logE(TAG, "mAppName is null", t);
+                return;
+            }*/
+
             if (overFlow > 0 && mAppName.getVisibility() != GONE && appWidth > mChildMinWidth) {
                 int newSize = appWidth - Math.min(appWidth - mChildMinWidth, overFlow);
                 int childWidthSpec = MeasureSpec.makeMeasureSpec(newSize, MeasureSpec.AT_MOST);

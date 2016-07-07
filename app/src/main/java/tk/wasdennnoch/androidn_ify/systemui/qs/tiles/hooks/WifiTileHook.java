@@ -8,6 +8,7 @@ import com.android.internal.logging.MetricsLogger;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;
 import tk.wasdennnoch.androidn_ify.systemui.notifications.NotificationPanelHooks;
+import tk.wasdennnoch.androidn_ify.systemui.notifications.StatusBarHeaderHooks;
 import tk.wasdennnoch.androidn_ify.utils.ConfigUtils;
 
 public class WifiTileHook extends QSTileHook {
@@ -33,7 +34,7 @@ public class WifiTileHook extends QSTileHook {
     public void handleClick() {
         Object mState = getState();
         boolean enabled = XposedHelpers.getBooleanField(mState, "enabled");
-        if (NotificationPanelHooks.isCollapsed()) {
+        if (NotificationPanelHooks.isCollapsed() || StatusBarHeaderHooks.mUseDragPanel) {
             XposedHelpers.callMethod(mState, "copyTo", getObjectField("mStateBeforeClick"));
             if (ConfigUtils.M) {
                 MetricsLogger.action(mContext, MetricsLogger.QS_WIFI, !enabled);

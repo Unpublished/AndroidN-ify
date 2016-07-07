@@ -34,11 +34,16 @@ import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 import de.robv.android.xposed.XposedHelpers;
 import tk.wasdennnoch.androidn_ify.R;
+import tk.wasdennnoch.androidn_ify.XposedHook;
 import tk.wasdennnoch.androidn_ify.extracted.systemui.NonInterceptingScrollView;
 import tk.wasdennnoch.androidn_ify.extracted.systemui.ResizingSpace;
 import tk.wasdennnoch.androidn_ify.systemui.notifications.NotificationPanelHooks;
+import tk.wasdennnoch.androidn_ify.systemui.qs.QuickSettingsHooks;
 import tk.wasdennnoch.androidn_ify.utils.ResourceUtils;
 
 import static tk.wasdennnoch.androidn_ify.XposedHook.PACKAGE_SYSTEMUI;
@@ -73,6 +78,7 @@ public class QSDetail extends LinearLayout {
     private int mOpenY;
     private boolean mAnimatingOpen;
     private boolean mSwitchState;
+    private Class<?> recordClass;
 
     public QSDetail(Context context, ViewGroup panel, ViewGroup header) {
         super(context);
@@ -255,7 +261,17 @@ public class QSDetail extends LinearLayout {
             mDetailContent.removeAllViews();
             mDetailContent.addView(detailView);
             mDetailAdapter = adapter;
-            XposedHelpers.callMethod(mQsPanel, "setDetailRecord", r);
+            if (mQsPanel.getClass().getSimpleName().endsWith("QSDragPanel")) {
+                recordClass = r.getClass();
+                Method setDetailRecord = XposedHelpers.findMethodBestMatch(mQsPanel.getClass().getSuperclass(), "setDetailRecord", recordClass);
+                try {
+                    setDetailRecord.invoke(mQsPanel, r);
+                } catch (IllegalAccessException | InvocationTargetException t) {
+                    XposedHook.logE(TAG, "setDetailRecord failed", t);
+                }
+            } else {
+                XposedHelpers.callMethod(mQsPanel, "setDetailRecord", r);
+            }
             listener = mHideGridContentWhenDone;
             setVisibility(View.VISIBLE);
             transition(mHeader, false);
@@ -344,7 +360,16 @@ public class QSDetail extends LinearLayout {
     private final AnimatorListenerAdapter mTeardownDetailWhenDone = new AnimatorListenerAdapter() {
         public void onAnimationEnd(Animator animation) {
             mDetailContent.removeAllViews();
-            XposedHelpers.callMethod(mQsPanel, "setDetailRecord", (Object) null);
+            if (mQsPanel.getClass().getSimpleName().endsWith("QSDragPanel") && recordClass != null) {
+                Method setDetailRecord = XposedHelpers.findMethodBestMatch(mQsPanel.getClass().getSuperclass(), "setDetailRecord", recordClass);
+                try {
+                    setDetailRecord.invoke(mQsPanel, (Object) null);
+                } catch (IllegalAccessException | InvocationTargetException t) {
+                    XposedHook.logE(TAG, "setDetailRecord failed", t);
+                }
+            } else {
+                XposedHelpers.callMethod(mQsPanel, "setDetailRecord", (Object) null);
+            }
             setVisibility(View.INVISIBLE);
             mClosingDetail = false;
         }

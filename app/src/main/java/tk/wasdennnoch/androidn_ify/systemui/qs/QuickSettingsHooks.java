@@ -17,6 +17,7 @@ import tk.wasdennnoch.androidn_ify.extracted.systemui.qs.PagedTileLayout;
 import tk.wasdennnoch.androidn_ify.extracted.systemui.qs.QSDetail;
 import tk.wasdennnoch.androidn_ify.systemui.notifications.StatusBarHeaderHooks;
 import tk.wasdennnoch.androidn_ify.utils.ConfigUtils;
+import tk.wasdennnoch.androidn_ify.utils.RomUtils;
 
 public class QuickSettingsHooks {
 
@@ -25,7 +26,8 @@ public class QuickSettingsHooks {
     private static final String CLASS_QS_PANEL = "com.android.systemui.qs.QSPanel";
     static final String CLASS_QS_DRAG_PANEL = "com.android.systemui.qs.QSDragPanel";
 
-    final Class mHookClass;
+    final Class mHookQSImpl;
+    final Class mHookQSBase;
 
     protected Context mContext;
     ViewGroup mQsPanel;
@@ -49,14 +51,17 @@ public class QuickSettingsHooks {
     public static QuickSettingsHooks create(ClassLoader classLoader) {
         try {
             XposedHelpers.findClass(CLASS_QS_DRAG_PANEL, classLoader);
+            XposedHook.logD(TAG, "cm");
             return new CMQuickSettingsHooks(classLoader);
         } catch (Throwable t) {
+            XposedHook.logD(TAG, "catch");
             return new QuickSettingsHooks(classLoader);
         }
     }
 
     QuickSettingsHooks(ClassLoader classLoader) {
-        mHookClass = XposedHelpers.findClass(getHookClass(), classLoader);
+        mHookQSImpl = XposedHelpers.findClass(getHookQSImplClass(), classLoader);
+        mHookQSBase = XposedHelpers.findClass(getHookQSBaseClass(), classLoader);
         hookConstructor();
         hookOnMeasure();
         hookOnLayout();
@@ -67,8 +72,9 @@ public class QuickSettingsHooks {
         hookFireScanStateChanged();
     }
 
+
     protected void hookConstructor() {
-        XposedHelpers.findAndHookConstructor(mHookClass, Context.class, AttributeSet.class, new XC_MethodHook() {
+        XposedHelpers.findAndHookConstructor(mHookQSImpl, Context.class, AttributeSet.class, new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 mQsPanel = (ViewGroup) param.thisObject;
@@ -82,7 +88,7 @@ public class QuickSettingsHooks {
     }
 
     private void hookUpdateResources() {
-        XposedHelpers.findAndHookMethod(mHookClass, "updateResources", new XC_MethodHook() {
+        XposedHelpers.findAndHookMethod(mHookQSImpl, "updateResources", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 if (mTileLayout != null) {
@@ -98,7 +104,7 @@ public class QuickSettingsHooks {
     }
 
     private void hookSetTiles() {
-        XposedHelpers.findAndHookMethod(mHookClass, "setTiles", Collection.class, new XC_MethodHook() {
+        XposedHelpers.findAndHookMethod(mHookQSImpl, "setTiles", Collection.class, new XC_MethodHook() {
             @SuppressWarnings("unchecked")
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
@@ -121,7 +127,7 @@ public class QuickSettingsHooks {
     }
 
     private void hookSetExpanded() {
-        XposedHelpers.findAndHookMethod(mHookClass, "setExpanded", boolean.class, new XC_MethodHook() {
+        XposedHelpers.findAndHookMethod(mHookQSImpl, "setExpanded", boolean.class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                 boolean expanded = (boolean) param.args[0];
@@ -136,7 +142,7 @@ public class QuickSettingsHooks {
 
     private void hookShowDetail() {
         if (!ConfigUtils.qs().fix_header_space) return;
-        XposedBridge.hookAllMethods(mHookClass, "handleShowDetailImpl", new XC_MethodReplacement() {
+        XposedBridge.hookAllMethods(mHookQSImpl, "handleShowDetailImpl", new XC_MethodReplacement() {
             @Override
             protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
                 if (mQSDetail != null)
@@ -148,7 +154,7 @@ public class QuickSettingsHooks {
 
     private void hookFireScanStateChanged() {
         if (!ConfigUtils.qs().fix_header_space) return;
-        XposedHelpers.findAndHookMethod(mHookClass, "fireScanStateChanged", boolean.class, new XC_MethodReplacement() {
+        XposedHelpers.findAndHookMethod(mHookQSBase, "fireScanStateChanged", boolean.class, new XC_MethodReplacement() {
             @Override
             protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
                 if (mQSDetail != null)
@@ -164,7 +170,7 @@ public class QuickSettingsHooks {
     }
 
     private void hookOnMeasure() {
-        XposedHelpers.findAndHookMethod(mHookClass, "onMeasure", int.class, int.class, new XC_MethodReplacement() {
+        XposedHelpers.findAndHookMethod(mHookQSImpl, "onMeasure", int.class, int.class, new XC_MethodReplacement() {
             @Override
             protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
                 onMeasure((int) param.args[0], (int) param.args[1]);
@@ -174,7 +180,7 @@ public class QuickSettingsHooks {
     }
 
     private void hookOnLayout() {
-        XposedHelpers.findAndHookMethod(mHookClass, "onLayout", boolean.class, int.class, int.class, int.class, int.class, new XC_MethodReplacement() {
+        XposedHelpers.findAndHookMethod(mHookQSImpl, "onLayout", boolean.class, int.class, int.class, int.class, int.class, new XC_MethodReplacement() {
             @Override
             protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
                 onLayout();
@@ -264,7 +270,14 @@ public class QuickSettingsHooks {
         return View.MeasureSpec.makeMeasureSpec(size, View.MeasureSpec.EXACTLY);
     }
 
-    protected String getHookClass() {
+    protected String getHookQSImplClass() {
+        //if (RomUtils.isCmBased())
+            //return CLASS_QS_DRAG_PANEL;
+        XposedHook.logD(TAG, "getHookQSImplClass");
+        return CLASS_QS_PANEL;
+    }
+
+    protected String getHookQSBaseClass() {
         return CLASS_QS_PANEL;
     }
 

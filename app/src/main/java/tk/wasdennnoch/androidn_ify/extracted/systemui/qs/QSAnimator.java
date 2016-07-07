@@ -107,7 +107,8 @@ public class QSAnimator implements KeyguardMonitor.Callback, PagedTileLayout.Pag
 
     @Override
     public void onViewDetachedFromWindow(View v) {
-        mKeyguard.removeCallback(this);
+        if (mKeyguard != null)
+            mKeyguard.removeCallback(this);
     }
 
     @Override
